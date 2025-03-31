@@ -6,34 +6,31 @@ from datetime import datetime
 import os
 import pytz
 
-# Configuração para ambiente de produção na Vercel
-is_vercel_prod = os.environ.get('VERCEL_ENV') == "production"
-
 app = Flask(__name__)
 
-# Configuração do banco de dados
-# Para produção na Vercel, usaremos SQLite em memória ou um banco de dados externo
-if is_vercel_prod:
-    # Você pode configurar um banco de dados externo como PostgreSQL ou MySQL
-    # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-    
-    # Para testes, usaremos SQLite em memória
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tasks.db"
+# Configuração para ambiente de produção
+PRODUCTION = os.environ.get('VERCEL_ENV') == 'production'
+
+# Configuração de banco de dados - adaptação para Vercel
+if PRODUCTION:
+    # Na Vercel, usamos o caminho /tmp para armazenamento temporário de SQLite
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////tmp/tasks.db"
 else:
+    # Ambiente local
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tasks.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "5f7898f1dcb24a85b98f3c9c2c09f771")
 
-# Configuração para upload de arquivos
-# Na Vercel, arquivos estáticos devem ser armazenados em um serviço externo como S3
-if is_vercel_prod:
-    # Em produção, você deve usar um serviço de armazenamento como AWS S3
-    # Aqui estamos usando uma pasta temporária para demonstração
-    app.config["UPLOAD_FOLDER"] = "/tmp/profile_pics"
+# Configurações de upload
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if PRODUCTION:
+    # Na Vercel, podemos usar /tmp para arquivos temporários durante a execução
+    UPLOAD_FOLDER = "/tmp/profile_pics"
 else:
-    app.config["UPLOAD_FOLDER"] = "static/profile_pics"
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "static/profile_pics")
 
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max file size
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
@@ -52,7 +49,7 @@ def get_current_time():
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    name = db.Column(db.String(100))  # Campo nome
+    name = db.Column(db.String(100))
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(20))
@@ -149,13 +146,14 @@ def register():
             file = request.files["profile_pic"]
             if file and file.filename != "" and allowed_file(file.filename):
                 filename = secure_filename(f"{username}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
-                file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+                file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                file.save(file_path)
                 profile_pic = filename
 
         user = User(
             username=username,
             email=email,
-            name=name,  # Salvando o nome
+            name=name,
             phone=phone,
             profile_pic=profile_pic
         )
@@ -279,14 +277,6 @@ def profile():
                     filename = secure_filename(f"{user.username}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
                     file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
                     user.profile_pic = filename
-            
-            # Verificar se o usuário quer remover a foto de perfil
-            if request.form.get("remove_profile_pic") == "1":
-                if user.profile_pic:
-                    old_pic_path = os.path.join(app.config["UPLOAD_FOLDER"], user.profile_pic)
-                    if os.path.exists(old_pic_path):
-                        os.remove(old_pic_path)
-                user.profile_pic = None
 
             user.name = request.form.get("name", user.name)
             user.phone = request.form.get("phone", user.phone)
@@ -463,34 +453,20 @@ def create_steps(subtask_id):
 
     return redirect(url_for("index"))
 
-# Rota para inicializar o banco de dados (apenas para desenvolvimento)
-@app.route("/init-db", methods=["GET"])
-def init_db_route():
-    if not is_vercel_prod:  # Apenas permitir em ambiente de desenvolvimento
-        with app.app_context():
-            db.create_all()
-        return "Banco de dados inicializado com sucesso!"
-    return "Esta operação não é permitida em produção", 403
+# Função para servir arquivos de imagem do diretório temporário
+@app.route('/static/profile_pics/<path:filename>')
+def serve_profile_pic(filename):
+    if PRODUCTION:
+        # Em produção, servir do diretório temporário
+        return send_from_directory('/tmp/profile_pics', filename)
+    else:
+        # Em desenvolvimento, usar o diretório estático normal
+        return url_for('static', filename=f'profile_pics/{filename}')
 
-# Função para inicializar o banco de dados
-def init_db():
-    with app.app_context():
-        db.create_all()
-        print("Banco de dados inicializado com sucesso!")
+# Inicialização do banco de dados
+with app.app_context():
+    db.create_all()
 
-# Ponto de entrada para o Vercel
-@app.route("/api/index", methods=["GET"])
-def api_index():
-    return jsonify({"status": "ok", "message": "API funcionando!"})
-
-# Inicializar o banco de dados quando o aplicativo é executado diretamente
+# Para testes locais
 if __name__ == "__main__":
-    init_db()  # Inicializa o banco de dados
-    app.run(debug=True, host="0.0.0.0", port=5000)
-else:
-    # Quando executado pela Vercel, inicializa o banco de dados
-    with app.app_context():
-        try:
-            db.create_all()
-        except Exception as e:
-            print(f"Erro ao inicializar o banco de dados: {e}")
+    app.run(debug=False, host="0.0.0.0", port=5000)
