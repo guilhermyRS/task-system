@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerenciador de Tarefas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dark: {
+                100: "#1a1a1a",
+                200: "#222222",
+                300: "#2d2d2d",
+                400: "#353535",
+                500: "#3a3a3a",
+              },
+              accent: {
+                purple: "#8b5cf6",
+                blue: "#3b82f6",
+                green: "#10b981",
+                red: "#ef4444",
+                yellow: "#f59e0b",
+                pink: "#ec4899",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Base styles and resets */
+      :root {
+        --dark-100: #1a1a1a;
+        --dark-200: #222222;
+        --dark-300: #2d2d2d;
+        --dark-400: #353535;
+        --dark-500: #3a3a3a;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #2d2d2d;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 4px;
+      }
+
+      /* Custom checkbox styling */
+      input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 2px solid #4b5563;
+        background-color: #1f2937;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+      }
+
+      input[type="checkbox"]:checked {
+        background-color: #8b5cf6;
+        border-color: #8b5cf6;
+      }
+
+      input[type="checkbox"]:checked::after {
+        content: "✓";
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      /* Header and User Info */
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background-color: var(--dark-200);
+        border-bottom: 1px solid var(--dark-400);
+        margin-bottom: 1.5rem;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .datetime-display {
+        font-size: 0.875rem;
+        color: #9ca3af;
+        text-align: right;
+      }
+
+      .user-name {
+        font-weight: 500;
+        color: #e5e7eb;
+      }
+
+      /* Task containers and structure */
+      .task-container {
+        position: relative;
+        background-color: var(--dark-300);
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+      }
+
+      .subtask-container {
+        position: relative;
+        margin-left: 1.5rem;
+        padding-left: 1rem;
+        border-left: 2px solid var(--dark-400);
+      }
+
+      .steps-container {
+        position: relative;
+        margin-left: 1rem;
+        padding-left: 1rem;
+        border-left: 2px solid var(--dark-400);
+      }
+
+      /* Collapsible content */
+      .collapsible-content {
+        position: relative;
+        max-height: 1000px;
+        transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+        overflow: hidden;
+      }
+
+      .collapsed {
+        max-height: 0;
+        opacity: 0;
+      }
+
+      /* Progress bars */
+      .progress-bar {
+        height: 6px;
+        border-radius: 3px;
+        background-color: #4b5563;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s ease, background-color 0.3s ease;
+      }
+
+      /* Colorful progress bars */
+      .progress-bar-fill.list {
+        background: linear-gradient(to right, #8b5cf6, #3b82f6);
+      }
+
+      .progress-bar-fill.task {
+        background: linear-gradient(to right, #10b981, #3b82f6);
+      }
+
+      .progress-bar-fill.subtask {
+        background: linear-gradient(to right, #f59e0b, #ec4899);
+      }
+
+      /* Progress percentage */
+      .progress-percentage {
+        font-size: 0.7rem;
+        color: #9ca3af;
+      }
+
+      /* Buttons & Icons styling */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+
+      .btn-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 9999px;
+        padding: 0.4rem;
+      }
+
+      .btn-sm {
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0.3rem;
+      }
+
+      .btn-xs {
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0.25rem;
+      }
+
+      .btn-primary {
+        background-color: #8b5cf6;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: #7c3aed;
+      }
+
+      .btn-success {
+        background-color: #10b981;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background-color: #059669;
+      }
+
+      .btn-warning {
+        background-color: #f59e0b;
+        color: white;
+      }
+
+      .btn-warning:hover {
+        background-color: #d97706;
+      }
+
+      .btn-danger {
+        background-color: #ef4444;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background-color: #dc2626;
+      }
+
+      .btn-info {
+        background-color: #3b82f6;
+        color: white;
+      }
+
+      .btn-info:hover {
+        background-color: #2563eb;
+      }
+
+      .btn-pink {
+        background-color: #ec4899;
+        color: white;
+      }
+
+      .btn-pink:hover {
+        background-color: #db2777;
+      }
+
+      .btn-dark {
+        background-color: var(--dark-400);
+        color: white;
+      }
+
+      .btn-dark:hover {
+        background-color: var(--dark-500);
+      }
+
+      /* Action buttons group */
+      .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      /* Progress emojis */
+      .progress-emoji {
+        margin-left: 0.5rem;
+        font-size: 1.2rem;
+      }
+
+      /* Motivational message */
+      .motivational-message {
+        font-size: 0.85rem;
+        color: #9ca3af;
+        margin-top: 0.5rem;
+        font-style: italic;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        height: 0;
+        overflow: hidden;
+      }
+
+      .motivational-message.show {
+        opacity: 1;
+        height: auto;
+        margin-bottom: 0.5rem;
+      }
+
+      /* Confetti animation */
+      @keyframes confetti-fall {
+        0% {
+          transform: translateY(-100px) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      .confetti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background-color: #8b5cf6;
+        opacity: 0;
+        z-index: 9999;
+        animation: confetti-fall 4s ease-out forwards;
+      }
+
+      /* Tooltip */
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip .tooltip-text {
+        visibility: hidden;
+        width: 120px;
+        background-color: var(--dark-500);
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.75rem;
+      }
+
+      .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      /* Task completion celebration */
+      .task-celebration {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        pointer-events: none;
+      }
+
+      .celebration-content {
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        animation: celebration-fade 3s forwards;
+        max-width: 90%;
+      }
+
+      @keyframes celebration-fade {
+        0% {
+          opacity: 0;
+          transform: scale(0.8);
+        }
+        10% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        80% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(1.1);
+        }
+      }
+
+      .celebration-emoji {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+      }
+
+      .celebration-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 0.5rem;
+      }
+
+      .celebration-message {
+        color: #d1d5db;
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 640px) {
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+        }
+
+        input[type="checkbox"]:checked::after {
+          font-size: 12px;
+        }
+
+        .progress-bar {
+          height: 4px;
+        }
+
+        .progress-percentage {
+          font-size: 0.65rem;
+        }
+
+        .btn-icon {
+          width: 1.75rem;
+          height: 1.75rem;
+          padding: 0.35rem;
+        }
+
+        .btn-sm {
+          width: 1.5rem;
+          height: 1.5rem;
+          padding: 0.25rem;
+        }
+        
+        .btn-xs {
+          width: 1.35rem;
+          height: 1.35rem;
+          padding: 0.2rem;
+        }
+
+        .action-buttons {
+          gap: 0.35rem;
+        }
+
+        .progress-emoji {
+          font-size: 1rem;
+        }
+
+        .header-container {
+          flex-direction: column;
+          gap: 1rem;
+          padding: 0.75rem;
+        }
+
+        .user-info {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .datetime-display {
+          text-align: center;
+        }
+
+        .celebration-emoji {
+          font-size: 3rem;
+        }
+
+        .celebration-title {
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-dark-100 text-gray-200 min-h-screen p-3 md:p-6">
+    <div
+      class="max-w-3xl mx-auto bg-dark-200 p-4 sm:p-6 rounded-xl shadow-lg border border-dark-400"
+    >
+      <div class="flex items-center justify-between mb-6">
+        <h2
+          class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-accent-purple to-accent-blue bg-clip-text text-transparent"
+        >
+          Gerenciador de Tarefas
+        </h2>
+
+        <!-- Seção de boas-vindas e perfil -->
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-3">
+            {% if user.profile_pic %}
+            <img
+              src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}"
+              alt="Foto de perfil"
+              class="w-10 h-10 rounded-full object-cover border-2 border-accent-purple"
+            />
+            {% else %}
+            <div
+              class="w-10 h-10 rounded-full bg-accent-purple flex items-center justify-center text-white font-bold"
+            >
+              {{ user.name[0].upper() if user.name else user.username[0].upper() }}
+            </div>
+            {% endif %}
+            <div class="hidden sm:block">
+              <p class="text-sm text-gray-400">Bem-vindo,</p>
+              <p class="font-medium text-white">{{ user.name if user.name else user.username }}</p>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <a href="{{ url_for('profile') }}" class="tooltip">
+              <button class="btn btn-icon btn-dark">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span class="tooltip-text">Perfil</span>
+              </button>
+            </a>
+            <a href="{{ url_for('logout') }}" class="tooltip">
+              <button class="btn btn-icon btn-danger">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span class="tooltip-text">Sair</span>
+              </button>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagem motivacional diária -->
+      <div class="mb-6 bg-dark-300 p-4 rounded-lg border border-dark-400">
+        <div class="flex items-center">
+          <div class="text-2xl mr-3">🌟</div>
+          <div>
+            <h3 class="font-medium text-white">Frase do dia</h3>
+            <p class="text-gray-300 text-sm" id="daily-quote">
+              "O segredo para seguir em frente é começar. O segredo para começar é dividir tarefas complexas em pequenas tarefas gerenciáveis."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botão para criar nova lista -->
+      <div class="mb-6 flex justify-end">
+        <button
+          onclick="showCreateListForm()"
+          class="btn btn-primary px-3 py-2 font-medium"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 mr-1"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Criar Lista
+        </button>
+      </div>
+
+      <!-- Formulário para criar lista (inicialmente oculto) -->
+      <form id="createListForm" action="/" method="POST" class="mb-6 hidden">
+        <div>
+          <input
+            type="text"
+            name="list_name"
+            class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-2 sm:p-3 rounded-lg text-gray-100 outline-none"
+            placeholder="Nome da Lista"
+            required
+          />
+          <div class="flex space-x-2 mt-2">
+            <button
+              type="submit"
+              class="flex-1 bg-gradient-to-r from-accent-purple to-accent-blue text-white py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Criar
+            </button>
+            <button
+              type="button"
+              onclick="hideCreateListForm()"
+              class="flex-1 bg-dark-400 text-white py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Exibindo as listas e tarefas -->
+      {% for list in lists %}
+      <div
+        class="bg-dark-300 p-3 sm:p-5 rounded-xl mb-5 shadow-lg border border-dark-400"
+      >
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex items-center">
+            <!-- Nome da Lista -->
+            <span class="text-xl sm:text-2xl font-semibold text-white"
+              >{{ list.name }}</span
+            >
+          </div>
+
+          <!-- Botões de ação para listas -->
+          <div class="action-buttons">
+            <button
+              onclick="showAddTaskForm('{{ list.id }}')"
+              class="btn btn-icon btn-success tooltip"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span class="tooltip-text">Adicionar Tarefa</span>
+            </button>
+            <button
+              onclick="toggleListTasks('{{ list.id }}')"
+              class="btn btn-icon btn-info tooltip"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                id="listToggleIcon{{ list.id }}"
+                class="h-5 w-5 toggle-icon"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span class="tooltip-text" id="listToggleText{{ list.id }}">Minimizar Tarefas</span>
+            </button>
+            <a href="/delete_list/{{ list.id }}" class="tooltip">
+              <button class="btn btn-icon btn-danger">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span class="tooltip-text">Excluir Lista</span>
+              </button>
+            </a>
+          </div>
+        </div>
+
+        <!-- Barra de progresso da lista -->
+        <div class="mb-3 flex items-center space-x-2">
+          <div class="progress-bar flex-grow">
+            <div
+              id="listProgress{{ list.id }}"
+              class="progress-bar-fill list"
+              style="width: 0%"
+            ></div>
+          </div>
+          <span id="listPercentage{{ list.id }}" class="progress-percentage"
+            >0%</span
+          >
+          <span id="listEmoji{{ list.id }}" class="progress-emoji">📝</span>
+        </div>
+        
+        <!-- Mensagem motivacional (inicialmente oculta) -->
+        <div id="listMotivation{{ list.id }}" class="motivational-message">
+          Comece pequeno, sonhe grande! Cada tarefa concluída é um passo em direção ao seu objetivo.
+        </div>
+
+        <!-- Formulário para adicionar tarefa (inicialmente oculto) -->
+        <form
+          id="addTaskForm{{ list.id }}"
+          action="/"
+          method="POST"
+          class="mb-3 hidden"
+        >
+          <div class="flex space-x-2">
+            <input type="hidden" name="list_id" value="{{ list.id }}" />
+            <input
+              type="text"
+              name="task_content"
+              class="flex-grow bg-dark-400 border-2 border-dark-500 focus:border-accent-green p-2 rounded-lg text-gray-100 outline-none text-sm sm:text-base"
+              placeholder="Nova tarefa..."
+              required
+            />
+            <button
+              type="submit"
+              class="bg-accent-green text-white p-2 rounded-lg flex-shrink-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 sm:h-6 sm:w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onclick="hideAddTaskForm('{{ list.id }}')"
+              class="bg-dark-500 text-white p-2 rounded-lg flex-shrink-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 sm:h-6 sm:w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <!-- Lista de tarefas -->
+        <div id="listTasks{{ list.id }}" class="collapsible-content">
+          <ul class="space-y-3">
+            {% for task in list.tasks %}
+            <li
+              class="bg-dark-400 p-3 rounded-lg shadow-md border border-dark-500"
+            >
+              <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3 flex-grow">
+                  <input
+                    type="checkbox"
+                    id="task{{ task.id }}"
+                    data-task-id="{{ task.id }}"
+                    data-list-id="{{ list.id }}"
+                    onclick="handleTaskCheck(this, '{{ task.id }}', '{{ list.id }}')"
+                    {%
+                    if
+                    task.done
+                    %}checked{%
+                    endif
+                    %}
+                    class="flex-shrink-0"
+                  />
+                  <span
+                    class="text-sm sm:text-base {% if task.done %}line-through text-gray-500{% else %}text-gray-100{% endif %}"
+                    >{{ task.content }}{% if task.done %} <span class="ml-2">🎉</span>{% endif %}</span
+                  >
+                </div>
+
+                <!-- Botões de ação para tarefas -->
+                <div class="action-buttons">
+                  <button
+                    onclick="showAddSubtaskForm('{{ task.id }}')"
+                    class="btn btn-icon btn-sm btn-warning tooltip"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                    <span class="tooltip-text">Adicionar Subtarefa</span>
+                  </button>
+                  
+                  {% if task.subtasks and task.subtasks|length > 0 %}
+                  <button
+                    onclick="toggleSubtasks('{{ task.id }}')"
+                    class="btn btn-icon btn-sm btn-info tooltip"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      id="subtasksToggleIcon{{ task.id }}"
+                      class="h-4 w-4 toggle-icon"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <span class="tooltip-text" id="subtasksToggleText{{ task.id }}">Minimizar Subtarefas</span>
+                  </button>
+                  {% endif %}
+                  
+                  <a href="/delete_task/{{ task.id }}" class="tooltip">
+                    <button class="btn btn-icon btn-sm btn-danger">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      <span class="tooltip-text">Excluir Tarefa</span>
+                    </button>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Barra de progresso da tarefa -->
+              <div class="mt-2 mb-2 flex items-center space-x-2">
+                <div class="progress-bar flex-grow">
+                  <div
+                    id="taskProgress{{ task.id }}"
+                    class="progress-bar-fill task"
+                    style="width: {% if task.done %}100{% else %}0{% endif %}%"
+                  ></div>
+                </div>
+                <span
+                  id="taskPercentage{{ task.id }}"
+                  class="progress-percentage"
+                  >{% if task.done %}100{% else %}0{% endif %}%</span
+                >
+                <span id="taskEmoji{{ task.id }}" class="progress-emoji">
+                  {% if task.done %}😄{% else %}🔄{% endif %}
+                </span>
+              </div>
+              
+              <!-- Mensagem motivacional da tarefa (inicialmente oculta) -->
+              <div id="taskMotivation{{ task.id }}" class="motivational-message {% if task.done %}show{% endif %}">
+                {% if task.done %}
+                Excelente trabalho! Você está no caminho certo para o sucesso.
+                {% endif %}
+              </div>
+
+              <!-- Subtarefas -->
+              {% if task.subtasks and task.subtasks|length > 0 %}
+              <div
+                id="subtasks{{ task.id }}"
+                class="mt-3 pl-4 sm:pl-8 border-l-2 border-dark-500 collapsible-content"
+              >
+                <h4 class="text-xs sm:text-sm text-gray-400 mb-2">
+                  Subtarefas
+                </h4>
+                <ul class="space-y-2">
+                  {% for subtask in task.subtasks %}
+                  <li
+                    class="flex justify-between items-center bg-dark-500 p-2 sm:p-3 rounded-lg"
+                  >
+                    <div
+                      class="flex items-center space-x-2 sm:space-x-3 flex-grow"
+                    >
+                      <input
+                        type="checkbox"
+                        id="subtask{{ subtask.id }}"
+                        data-subtask-id="{{ subtask.id }}"
+                        data-task-id="{{ task.id }}"
+                        data-list-id="{{ list.id }}"
+                        onclick="handleSubtaskCheck(this, '{{ subtask.id }}', '{{ task.id }}', '{{ list.id }}')"
+                        {%
+                        if
+                        subtask.done
+                        %}checked{%
+                        endif
+                        %}
+                        class="flex-shrink-0"
+                      />
+                      <span
+                        class="text-xs sm:text-sm {% if subtask.done %}line-through text-gray-500{% else %}text-gray-300{% endif %}"
+                        >{{ subtask.content }}{% if subtask.done %} <span class="ml-1">🌟</span>{% endif %}</span
+                      >
+                    </div>
+
+                    <!-- Botões de ação para subtarefas -->
+                    <div class="action-buttons">
+                      {% if subtask.steps and subtask.steps|length > 0 %}
+                      <button
+                        onclick="toggleSteps('{{ subtask.id }}')"
+                        class="btn btn-icon btn-xs btn-info tooltip"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          id="stepsToggleIcon{{ subtask.id }}"
+                          class="h-3 w-3 sm:h-4 sm:w-4 toggle-icon"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                        <span class="tooltip-text" id="stepsToggleText{{ subtask.id }}">Minimizar Etapas</span>
+                      </button>
+                      {% endif %}
+                      
+                      <button
+                        onclick="showAddStepsForm('{{ subtask.id }}')"
+                        class="btn btn-icon btn-xs btn-pink tooltip"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-3 w-3 sm:h-4 sm:w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"
+                          />
+                        </svg>
+                        <span class="tooltip-text">Adicionar Etapas</span>
+                      </button>
+                      
+                      <a href="/delete_subtask/{{ subtask.id }}" class="tooltip">
+                        <button class="btn btn-icon btn-xs btn-danger">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-3 w-3 sm:h-4 sm:w-4"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                              clip-rule="evenodd"
+                            />
+                          </svg>
+                          <span class="tooltip-text">Excluir Subtarefa</span>
+                        </button>
+                      </a>
+                    </div>
+                  </li>
+
+                  <!-- Barra de progresso da subtarefa -->
+                  <div class="mt-1 mb-2 flex items-center space-x-2">
+                    <div class="progress-bar flex-grow">
+                      <div
+                        id="subtaskProgress{{ subtask.id }}"
+                        class="progress-bar-fill subtask"
+                        style="width: {% if subtask.done %}100{% else %}0{% endif %}%"
+                      ></div>
+                    </div>
+                    <span
+                      id="subtaskPercentage{{ subtask.id }}"
+                      class="progress-percentage"
+                      >{% if subtask.done %}100{% else %}0{% endif %}%</span
+                    >
+                    <span id="subtaskEmoji{{ subtask.id }}" class="progress-emoji">
+                      {% if subtask.done %}😊{% else %}🔍{% endif %}
+                    </span>
+                  </div>
+                  
+                  <!-- Mensagem motivacional da subtarefa (inicialmente oculta) -->
+                  <div id="subtaskMotivation{{ subtask.id }}" class="motivational-message {% if subtask.done %}show{% endif %}">
+                    {% if subtask.done %}
+                    Ótimo progresso! Cada pequena conquista te aproxima do objetivo final.
+                    {% endif %}
+                  </div>
+
+                  <!-- Formulário para adicionar etapas (inicialmente oculto) -->
+                  <form
+                    id="addStepsForm{{ subtask.id }}"
+                    action="/create_steps/{{ subtask.id }}"
+                    method="POST"
+                    class="mt-2 mb-2 hidden"
+                  >
+                    <div class="flex space-x-2">
+                      <input
+                        type="number"
+                        name="steps_count"
+                        min="1"
+                        max="10"
+                        class="flex-grow bg-dark-400 border-2 border-dark-500 focus:border-accent-pink p-2 rounded-lg text-gray-100 outline-none text-xs"
+                        placeholder="Quantidade de etapas"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        class="bg-accent-pink text-white p-1 rounded-lg flex-shrink-0"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onclick="hideAddStepsForm('{{ subtask.id }}')"
+                        class="bg-dark-400 text-white p-1 rounded-lg flex-shrink-0"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </form>
+
+                  <!-- Etapas da subtarefa -->
+                  {% if subtask.steps and subtask.steps|length > 0 %}
+                  <div
+                    id="steps{{ subtask.id }}"
+                    class="mt-2 pl-3 sm:pl-6 border-l-2 border-dark-400 collapsible-content"
+                  >
+                    <h5 class="text-xs text-gray-500 mb-1">Etapas</h5>
+                    <ul class="space-y-1">
+                      {% for step in subtask.steps %}
+                      <li
+                        class="flex justify-between items-center bg-dark-400 p-1 sm:p-2 rounded-md"
+                      >
+                        <div class="flex items-center space-x-2 flex-grow">
+                          <input
+                            type="checkbox"
+                            id="step{{ step.id }}"
+                            data-step-id="{{ step.id }}"
+                            data-subtask-id="{{ subtask.id }}"
+                            data-task-id="{{ task.id }}"
+                            data-list-id="{{ list.id }}"
+                            onclick="handleStepCheck(this, '{{ step.id }}', '{{ subtask.id }}', '{{ task.id }}', '{{ list.id }}')"
+                            {%
+                            if
+                            step.done
+                            %}checked{%
+                            endif
+                            %}
+                            class="flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4"
+                          />
+                          <span
+                            class="text-xs {% if step.done %}line-through text-gray-500{% else %}text-gray-300{% endif %}"
+                            >{{ step.number }}. {{ step.content }}{% if step.done %} <span class="ml-1">⭐</span>{% endif %}</span
+                          >
+                        </div>
+                        <a
+                          href="/delete_step/{{ step.id }}"
+                          class="text-gray-500 hover:text-accent-red"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-3 w-3"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clip-rule="evenodd"
+                            />
+                          </svg>
+                        </a>
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endif %} {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+
+              <!-- Formulário para adicionar subtarefa (inicialmente oculto) -->
+              <form
+                id="addSubtaskForm{{ task.id }}"
+                action="/"
+                method="POST"
+                class="mt-3 pl-8 hidden"
+              >
+                <div class="flex space-x-2">
+                  <input type="hidden" name="task_id" value="{{ task.id }}" />
+                  <input
+                    type="text"
+                    name="subtask_content"
+                    class="flex-grow bg-dark-500 border-2 border-dark-400 focus:border-accent-yellow p-2 rounded-lg text-gray-100 outline-none text-xs sm:text-sm"
+                    placeholder="Nova subtarefa..."
+                    required
+                  />
+                  <button
+                    type="submit"
+                    class="bg-accent-yellow text-white p-1 sm:p-2 rounded-lg flex-shrink-0"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4 sm:h-5 sm:w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onclick="hideAddSubtaskForm('{{ task.id }}')"
+                    class="bg-dark-400 text-white p-1 sm:p-2 rounded-lg flex-shrink-0"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4 sm:h-5 sm:w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <!-- Mensagem quando não há tarefas -->
+        {% if not list.tasks or list.tasks|length == 0 %}
+        <div class="text-center py-4">
+          <p class="text-gray-500 text-sm">Nenhuma tarefa adicionada</p>
+          <button
+            onclick="showAddTaskForm('{{ list.id }}')"
+            class="mt-2 bg-gradient-to-r from-accent-green to-accent-blue text-white py-1 px-3 rounded-lg text-sm flex items-center mx-auto"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mr-1"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Adicionar Tarefa
+          </button>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <!-- Mensagem quando não há listas -->
+      {% if not lists or lists|length == 0 %}
+      <div
+        class="text-center py-6 bg-dark-300 rounded-xl border border-dark-400"
+      >
+        <p class="text-gray-400 mb-2">
+          Você ainda não tem nenhuma lista de tarefas
+        </p>
+        <button
+          onclick="showCreateListForm()"
+          class="mt-2 bg-gradient-to-r from-accent-purple to-accent-blue text-white py-2 px-4 rounded-lg font-medium flex items-center mx-auto"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 mr-2"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Criar Sua Primeira Lista
+        </button>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Elemento para celebração de conclusão de tarefas -->
+    <div id="task-celebration" class="task-celebration" style="display: none;">
+      <div class="celebration-content">
+        <div class="celebration-emoji" id="celebration-emoji">🎉</div>
+        <h3 class="celebration-title" id="celebration-title">Tarefa Concluída!</h3>
+        <p class="celebration-message" id="celebration-message">Você está fazendo um ótimo trabalho!</p>
+      </div>
+    </div>
+
+    <script>
+      // Frases motivacionais
+      const motivationalQuotes = [
+        "O segredo para seguir em frente é começar. O segredo para começar é dividir tarefas complexas em pequenas tarefas gerenciáveis.",
+        "Não é sobre ter tempo, é sobre fazer tempo. Organize suas prioridades.",
+        "Produtividade não é fazer mais coisas, é fazer as coisas certas.",
+        "Pequenos progressos diários levam a grandes resultados.",
+        "Foco em progresso, não em perfeição.",
+        "A disciplina é a ponte entre metas e realizações.",
+        "Organize-se hoje para um amanhã mais produtivo.",
+        "Cada tarefa concluída é um passo em direção ao seu objetivo maior.",
+        "Não espere por inspiração. Seja a inspiração.",
+        "Sua produtividade de hoje determina seu progresso de amanhã."
+      ];
+      
+      // Frases de celebração para tarefas concluídas
+      const taskCompletionMessages = [
+        "Excelente trabalho! Continue assim!",
+        "Você está arrasando! Mais uma conquista!",
+        "Incrível! Você está no caminho certo!",
+        "Parabéns! Cada passo conta!",
+        "Você é imparável! Continue avançando!",
+        "Que conquista! Você está fazendo história!",
+        "Sensacional! Seu esforço está valendo a pena!",
+        "Uau! Você está superando expectativas!",
+        "Fantástico! Seu progresso é inspirador!",
+        "Brilhante! Você está dominando suas tarefas!"
+      ];
+      
+      // Emojis de emoção para diferentes níveis de progresso
+      const progressEmojis = {
+        list: {
+          0: "📝", // Início
+          25: "🚀", // Começando
+          50: "💪", // Metade do caminho
+          75: "🔥", // Quase lá
+          100: "🏆"  // Concluído
+        },
+        task: {
+          0: "🤔", // Pensando
+          25: "🙂", // Começando
+          50: "😊", // Progredindo
+          75: "😄", // Quase lá
+          100: "😁"  // Concluído
+        },
+        subtask: {
+          0: "🔍", // Investigando
+          25: "📊", // Organizando
+          50: "📈", // Avançando
+          75: "🌈", // Quase lá
+          100: "😊"  // Concluído
+        }
+      };
+      
+      // Cores para barras de progresso baseadas na porcentagem
+      const progressColors = {
+        0: "#4b5563", // Cinza (início)
+        25: "#f59e0b", // Amarelo (começando)
+        50: "#3b82f6", // Azul (metade)
+        75: "#8b5cf6", // Roxo (quase lá)
+        100: "#10b981" // Verde (concluído)
+      };
+
+      // Document ready event handler
+      document.addEventListener("DOMContentLoaded", function () {
+        loadCollapseStates();
+        calculateAllProgress();
+        setRandomDailyQuote();
+      });
+      
+      // Definir uma frase motivacional aleatória
+      function setRandomDailyQuote() {
+        const quoteElement = document.getElementById("daily-quote");
+        if (quoteElement) {
+          const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+          quoteElement.textContent = motivationalQuotes[randomIndex];
+        }
+      }
+
+      // Função para atualizar emojis baseado na porcentagem de conclusão
+      function updateEmoji(percentage, emojiElementId, type) {
+        const emojiElement = document.getElementById(emojiElementId);
+        if (!emojiElement) return;
+        
+        let emoji = '';
+        
+        // Determinar qual emoji usar baseado no tipo e porcentagem
+        if (type === 'list') {
+          if (percentage === 0) emoji = progressEmojis.list[0];
+          else if (percentage < 25) emoji = progressEmojis.list[0];
+          else if (percentage < 50) emoji = progressEmojis.list[25];
+          else if (percentage < 75) emoji = progressEmojis.list[50];
+          else if (percentage < 100) emoji = progressEmojis.list[75];
+          else emoji = progressEmojis.list[100];
+        } else if (type === 'task') {
+          if (percentage === 0) emoji = progressEmojis.task[0];
+          else if (percentage < 25) emoji = progressEmojis.task[0];
+          else if (percentage < 50) emoji = progressEmojis.task[25];
+          else if (percentage < 75) emoji = progressEmojis.task[50];
+          else if (percentage < 100) emoji = progressEmojis.task[75];
+          else emoji = progressEmojis.task[100];
+        } else if (type === 'subtask') {
+          if (percentage === 0) emoji = progressEmojis.subtask[0];
+          else if (percentage < 25) emoji = progressEmojis.subtask[0];
+          else if (percentage < 50) emoji = progressEmojis.subtask[25];
+          else if (percentage < 75) emoji = progressEmojis.subtask[50];
+          else if (percentage < 100) emoji = progressEmojis.subtask[75];
+          else emoji = progressEmojis.subtask[100];
+        }
+        
+        emojiElement.textContent = emoji;
+      }
+      
+      // Função para atualizar a cor da barra de progresso
+      function updateProgressBarColor(progressBarId, percentage) {
+        const progressBar = document.getElementById(progressBarId);
+        if (!progressBar) return;
+        
+        let color = '';
+        
+        // Determinar qual cor usar baseado na porcentagem
+        if (percentage === 0) color = progressColors[0];
+        else if (percentage < 25) color = progressColors[0];
+        else if (percentage < 50) color = progressColors[25];
+        else if (percentage < 75) color = progressColors[50];
+        else if (percentage < 100) color = progressColors[75];
+        else color = progressColors[100];
+        
+        // Manter os gradientes originais para tipos específicos
+        if (progressBar.classList.contains('list') || 
+            progressBar.classList.contains('task') || 
+            progressBar.classList.contains('subtask')) {
+          // Não alterar os gradientes personalizados
+        } else {
+          progressBar.style.backgroundColor = color;
+        }
+      }
+      
+      // Função para mostrar mensagem motivacional
+      function showMotivationalMessage(elementId, isCompleted) {
+        const messageElement = document.getElementById(elementId);
+        if (!messageElement) return;
+        
+        if (isCompleted) {
+          messageElement.classList.add('show');
+        } else {
+          messageElement.classList.remove('show');
+        }
+      }
+      
+      // Função para criar e mostrar confetes
+      function createConfetti() {
+        const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
+        const confettiCount = 100;
+        
+        for (let i = 0; i < confettiCount; i++) {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.left = Math.random() * 100 + 'vw';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.width = (Math.random() * 10 + 5) + 'px';
+          confetti.style.height = (Math.random() * 10 + 5) + 'px';
+          confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+          confetti.style.opacity = '0';
+          
+          document.body.appendChild(confetti);
+          
+          // Remover confete após a animação
+          setTimeout(() => {
+            confetti.remove();
+          }, 5000);
+        }
+      }
+      
+      // Função para mostrar celebração de conclusão de tarefa
+      function showTaskCelebration(taskName) {
+        const celebrationElement = document.getElementById('task-celebration');
+        const emojiElement = document.getElementById('celebration-emoji');
+        const titleElement = document.getElementById('celebration-title');
+        const messageElement = document.getElementById('celebration-message');
+        
+        // Definir conteúdo da celebração
+        const celebrationEmojis = ['🎉', '🎊', '🥳', '🏆', '⭐', '✨', '🌟'];
+        const randomEmoji = celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)];
+        const randomMessage = taskCompletionMessages[Math.floor(Math.random() * taskCompletionMessages.length)];
+        
+        emojiElement.textContent = randomEmoji;
+        titleElement.textContent = 'Tarefa Concluída!';
+        messageElement.textContent = randomMessage;
+        
+        // Mostrar celebração
+        celebrationElement.style.display = 'flex';
+        
+        // Criar confetes
+        createConfetti();
+        
+        // Esconder celebração após alguns segundos
+        setTimeout(() => {
+          celebrationElement.style.display = 'none';
+        }, 3000);
+      }
+
+      // Form visibility functions
+      function showCreateListForm() {
+        document.getElementById("createListForm").classList.remove("hidden");
+      }
+
+      function hideCreateListForm() {
+        document.getElementById("createListForm").classList.add("hidden");
+      }
+
+      function showAddTaskForm(listId) {
+        document
+          .getElementById("addTaskForm" + listId)
+          .classList.remove("hidden");
+      }
+
+      function hideAddTaskForm(listId) {
+        document.getElementById("addTaskForm" + listId).classList.add("hidden");
+      }
+
+      function showAddSubtaskForm(taskId) {
+        document
+          .getElementById("addSubtaskForm" + taskId)
+          .classList.remove("hidden");
+      }
+
+      function hideAddSubtaskForm(taskId) {
+        document
+          .getElementById("addSubtaskForm" + taskId)
+          .classList.add("hidden");
+      }
+
+      function showAddStepsForm(subtaskId) {
+        document
+          .getElementById("addStepsForm" + subtaskId)
+          .classList.remove("hidden");
+      }
+
+      function hideAddStepsForm(subtaskId) {
+        document
+          .getElementById("addStepsForm" + subtaskId)
+          .classList.add("hidden");
+      }
+
+      // Enhanced toggle functions for collapsible content
+      function toggleListTasks(listId) {
+        const content = document.getElementById("listTasks" + listId);
+        const icon = document.getElementById("listToggleIcon" + listId);
+        const text = document.getElementById("listToggleText" + listId);
+
+        if (content) {
+          content.classList.toggle("collapsed");
+        }
+
+        if (icon) icon.classList.toggle("rotated");
+        if (text) {
+          text.textContent = content.classList.contains("collapsed")
+            ? "Maximizar Tarefas"
+            : "Minimizar Tarefas";
+        }
+
+        saveCollapseState(
+          "list_" + listId,
+          content.classList.contains("collapsed")
+        );
+      }
+
+      function toggleSubtasks(taskId) {
+        const content = document.getElementById("subtasks" + taskId);
+        const icon = document.getElementById("subtasksToggleIcon" + taskId);
+        const text = document.getElementById("subtasksToggleText" + taskId);
+
+        if (content) {
+          content.classList.toggle("collapsed");
+        }
+
+        if (icon) icon.classList.toggle("rotated");
+        if (text) {
+          text.textContent = content.classList.contains("collapsed")
+            ? "Maximizar Subtarefas"
+            : "Minimizar Subtarefas";
+        }
+
+        saveCollapseState(
+          "task_" + taskId,
+          content.classList.contains("collapsed")
+        );
+      }
+
+      function toggleSteps(subtaskId) {
+        const content = document.getElementById("steps" + subtaskId);
+        const icon = document.getElementById("stepsToggleIcon" + subtaskId);
+        const text = document.getElementById("stepsToggleText" + subtaskId);
+
+        if (content) {
+          content.classList.toggle("collapsed");
+        }
+
+        if (icon) icon.classList.toggle("rotated");
+        if (text) {
+          text.textContent = content.classList.contains("collapsed")
+            ? "Maximizar Etapas"
+            : "Minimizar Etapas";
+        }
+
+        saveCollapseState(
+          "subtask_" + subtaskId,
+          content.classList.contains("collapsed")
+        );
+      }
+
+      // LocalStorage state management
+      function saveCollapseState(key, isCollapsed) {
+        localStorage.setItem(key, isCollapsed);
+      }
+
+      function loadCollapseStates() {
+        // Load list states
+        document.querySelectorAll('[id^="listTasks"]').forEach((element) => {
+          const listId = element.id.replace("listTasks", "");
+          const savedState = localStorage.getItem("list_" + listId);
+
+          if (savedState === "true") {
+            element.classList.add("collapsed");
+            const icon = document.getElementById("listToggleIcon" + listId);
+            const text = document.getElementById("listToggleText" + listId);
+            if (icon) icon.classList.add("rotated");
+            if (text) text.textContent = "Maximizar Tarefas";
+          }
+        });
+
+        // Load subtask states
+        document.querySelectorAll('[id^="subtasks"]').forEach((element) => {
+          const taskId = element.id.replace("subtasks", "");
+          const savedState = localStorage.getItem("task_" + taskId);
+
+          if (savedState === "true") {
+            element.classList.add("collapsed");
+            const icon = document.getElementById("subtasksToggleIcon" + taskId);
+            const text = document.getElementById("subtasksToggleText" + taskId);
+            if (icon) icon.classList.add("rotated");
+            if (text) text.textContent = "Maximizar Subtarefas";
+          }
+        });
+
+        // Load step states
+        document.querySelectorAll('[id^="steps"]').forEach((element) => {
+          const subtaskId = element.id.replace("steps", "");
+          const savedState = localStorage.getItem("subtask_" + subtaskId);
+
+          if (savedState === "true") {
+            element.classList.add("collapsed");
+            const icon = document.getElementById("stepsToggleIcon" + subtaskId);
+            const text = document.getElementById("stepsToggleText" + subtaskId);
+            if (icon) icon.classList.add("rotated");
+            if (text) text.textContent = "Maximizar Etapas";
+          }
+        });
+      }
+
+      // Progress calculation functions
+      function calculateAllProgress() {
+        document.querySelectorAll('[id^="listProgress"]').forEach((element) => {
+          const listId = element.id.replace("listProgress", "");
+          updateListProgress(listId);
+        });
+
+        document.querySelectorAll('[id^="taskProgress"]').forEach((element) => {
+          const taskId = element.id.replace("taskProgress", "");
+          updateTaskProgress(taskId);
+        });
+
+        document
+          .querySelectorAll('[id^="subtaskProgress"]')
+          .forEach((element) => {
+            const subtaskId = element.id.replace("subtaskProgress", "");
+            updateSubtaskProgress(subtaskId);
+          });
+      }
+
+      function updateListProgress(listId) {
+        const taskCheckboxes = document.querySelectorAll(
+          `input[data-list-id="${listId}"][data-task-id]:not([data-subtask-id])`
+        );
+
+        if (taskCheckboxes.length === 0) {
+          setProgressBar("listProgress" + listId, "listPercentage" + listId, 0);
+          updateEmoji(0, "listEmoji" + listId, "list");
+          showMotivationalMessage("listMotivation" + listId, false);
+          return;
+        }
+
+        const completedTasks = Array.from(taskCheckboxes).filter(
+          (cb) => cb.checked
+        ).length;
+        const percentage = Math.round(
+          (completedTasks / taskCheckboxes.length) * 100
+        );
+
+        setProgressBar(
+          "listProgress" + listId,
+          "listPercentage" + listId,
+          percentage
+        );
+        updateEmoji(percentage, "listEmoji" + listId, "list");
+        updateProgressBarColor("listProgress" + listId, percentage);
+        showMotivationalMessage("listMotivation" + listId, percentage === 100);
+      }
+
+      function updateTaskProgress(taskId) {
+        const subtaskCheckboxes = document.querySelectorAll(
+          `input[data-task-id="${taskId}"][data-subtask-id]:not([data-step-id])`
+        );
+
+        if (subtaskCheckboxes.length === 0) {
+          const taskCheckbox = document.getElementById("task" + taskId);
+          const percentage = taskCheckbox?.checked ? 100 : 0;
+          setProgressBar(
+            "taskProgress" + taskId,
+            "taskPercentage" + taskId,
+            percentage
+          );
+          updateEmoji(percentage, "taskEmoji" + taskId, "task");
+          updateProgressBarColor("taskProgress" + taskId, percentage);
+          showMotivationalMessage("taskMotivation" + taskId, percentage === 100);
+          return;
+        }
+
+        const completedSubtasks = Array.from(subtaskCheckboxes).filter(
+          (cb) => cb.checked
+        ).length;
+        const percentage = Math.round(
+          (completedSubtasks / subtaskCheckboxes.length) * 100
+        );
+
+        setProgressBar(
+          "taskProgress" + taskId,
+          "taskPercentage" + taskId,
+          percentage
+        );
+        updateEmoji(percentage, "taskEmoji" + taskId, "task");
+        updateProgressBarColor("taskProgress" + taskId, percentage);
+        showMotivationalMessage("taskMotivation" + taskId, percentage === 100);
+      }
+
+      function updateSubtaskProgress(subtaskId) {
+        const stepCheckboxes = document.querySelectorAll(
+          `input[data-subtask-id="${subtaskId}"][data-step-id]`
+        );
+
+        if (stepCheckboxes.length === 0) {
+          const subtaskCheckbox = document.getElementById(
+            "subtask" + subtaskId
+          );
+          const percentage = subtaskCheckbox?.checked ? 100 : 0;
+          setProgressBar(
+            "subtaskProgress" + subtaskId,
+            "subtaskPercentage" + subtaskId,
+            percentage
+          );
+          updateEmoji(percentage, "subtaskEmoji" + subtaskId, "subtask");
+          updateProgressBarColor("subtaskProgress" + subtaskId, percentage);
+          showMotivationalMessage("subtaskMotivation" + subtaskId, percentage === 100);
+          return;
+        }
+
+        const completedSteps = Array.from(stepCheckboxes).filter(
+          (cb) => cb.checked
+        ).length;
+        const percentage = Math.round(
+          (completedSteps / stepCheckboxes.length) * 100
+        );
+
+        setProgressBar(
+          "subtaskProgress" + subtaskId,
+          "subtaskPercentage" + subtaskId,
+          percentage
+        );
+        updateEmoji(percentage, "subtaskEmoji" + subtaskId, "subtask");
+        updateProgressBarColor("subtaskProgress" + subtaskId, percentage);
+        showMotivationalMessage("subtaskMotivation" + subtaskId, percentage === 100);
+      }
+
+      function setProgressBar(progressBarId, percentageId, percentage) {
+        const progressBar = document.getElementById(progressBarId);
+        const percentageElement = document.getElementById(percentageId);
+
+        if (progressBar && percentageElement) {
+          progressBar.style.width = percentage + "%";
+          percentageElement.textContent = percentage + "%";
+        }
+      }
+
+      // Checkbox handler functions
+      function handleTaskCheck(checkbox, taskId, listId) {
+        event.preventDefault();
+        
+        // Se estiver marcando como concluído, mostrar celebração
+        if (!checkbox.checked) {
+          showTaskCelebration();
+        }
+
+        updateTaskProgress(taskId);
+        updateListProgress(listId);
+
+        window.location = `/toggle_task/${taskId}`;
+      }
+
+      function handleSubtaskCheck(checkbox, subtaskId, taskId, listId) {
+        event.preventDefault();
+        
+        // Se estiver marcando como concluído, mostrar mensagem motivacional
+        if (!checkbox.checked) {
+          const motivationElement = document.getElementById("subtaskMotivation" + subtaskId);
+          if (motivationElement) {
+            motivationElement.textContent = "Ótimo progresso! Cada pequena conquista te aproxima do objetivo final.";
+            motivationElement.classList.add("show");
+          }
+        }
+
+        updateSubtaskProgress(subtaskId);
+        updateTaskProgress(taskId);
+        updateListProgress(listId);
+
+        window.location = `/toggle_subtask/${subtaskId}`;
+      }
+
+      function handleStepCheck(checkbox, stepId, subtaskId, taskId, listId) {
+        event.preventDefault();
+
+        updateSubtaskProgress(subtaskId);
+        updateTaskProgress(taskId);
+        updateListProgress(listId);
+
+        window.location = `/toggle_step/${stepId}`;
+      }
+    </script>
+  </body>
+</html>

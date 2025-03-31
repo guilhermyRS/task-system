@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Gerenciador de Tarefas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dark: {
+                100: "#1a1a1a",
+                200: "#222222",
+                300: "#2d2d2d",
+                400: "#353535",
+                500: "#3a3a3a",
+              },
+              accent: {
+                purple: "#8b5cf6",
+                blue: "#3b82f6",
+                green: "#10b981",
+                red: "#ef4444",
+                yellow: "#f59e0b",
+                pink: "#ec4899",
+              },
+            },
+          },
+        },
+      };
+    </script>
+</head>
+<body class="bg-dark-100 text-gray-200 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Logo e Título -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold bg-gradient-to-r from-accent-purple to-accent-blue bg-clip-text text-transparent">
+                Gerenciador de Tarefas
+            </h2>
+            <p class="text-gray-400 mt-2">Crie sua conta</p>
+        </div>
+
+        <!-- Mensagens Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-900/20 text-red-500{% else %}bg-green-900/20 text-green-500{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulário de Registro -->
+        <div class="bg-dark-200 p-8 rounded-xl shadow-lg border border-dark-400">
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                <div>
+                    <label for=name" class="block text-sm font-medium text-gray-400 mb-1">
+                        Nome:
+                    </label>
+                    <input type="text" 
+                           name="name" 
+                           id="name" 
+                           required
+                           class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-3 rounded-lg text-gray-100 outline-none">
+                </div>
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-400 mb-1">
+                        Usuário
+                    </label>
+                    <input type="text" 
+                           name="username" 
+                           id="username" 
+                           required
+                           class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-3 rounded-lg text-gray-100 outline-none">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-400 mb-1">
+                        Email
+                    </label>
+                    <input type="email" 
+                           name="email" 
+                           id="email" 
+                           required
+                           class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-3 rounded-lg text-gray-100 outline-none">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-400 mb-1">
+                        Senha
+                    </label>
+                    <input type="password" 
+                           name="password" 
+                           id="password" 
+                           required
+                           class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-3 rounded-lg text-gray-100 outline-none">
+                </div>
+
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-400 mb-1">
+                        Telefone (opcional)
+                    </label>
+                    <input type="tel" 
+                           name="phone" 
+                           id="phone"
+                           class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-3 rounded-lg text-gray-100 outline-none">
+                </div>
+
+                <div>
+                    <label for="profile_pic" class="block text-sm font-medium text-gray-400 mb-1">
+                        Foto de Perfil (opcional)
+                    </label>
+                    <input type="file" 
+                           name="profile_pic" 
+                           id="profile_pic" 
+                           accept="image/*"
+                           class="w-full text-sm text-gray-400
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-full file:border-0
+                                  file:text-sm file:font-medium
+                                  file:bg-accent-purple file:text-white
+                                  hover:file:bg-accent-blue
+                                  cursor-pointer">
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-accent-purple to-accent-blue hover:opacity-90 text-white font-medium py-3 px-4 rounded-lg transition-opacity">
+                    Criar Conta
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">
+                    Já tem uma conta? 
+                    <a href="{{ url_for('login') }}" 
+                       class="text-accent-purple hover:text-accent-blue transition-colors">
+                        Faça login
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

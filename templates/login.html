@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gerenciador de Tarefas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dark: {
+                100: "#1a1a1a",
+                200: "#222222",
+                300: "#2d2d2d",
+                400: "#353535",
+                500: "#3a3a3a",
+              },
+              accent: {
+                purple: "#8b5cf6",
+                blue: "#3b82f6",
+                green: "#10b981",
+                red: "#ef4444",
+                yellow: "#f59e0b",
+                pink: "#ec4899",
+              },
+            },
+          },
+        },
+      };
+    </script>
+</head>
+<body class="bg-dark-100 text-gray-200 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Logo e Título -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold bg-gradient-to-r from-accent-purple to-accent-blue bg-clip-text text-transparent">
+                Gerenciador de Tarefas
+            </h2>
+            <p class="text-gray-400 mt-2">Faça login para continuar</p>
+        </div>
+
+        <!-- Mensagens Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-900/20 text-red-500{% else %}bg-green-900/20 text-green-500{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulário de Login -->
+        <div class="bg-dark-200 p-8 rounded-xl shadow-lg border border-dark-400">
+            <form method="POST" class="space-y-6">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-400 mb-1">
+                        Usuário
+                    </label>
+                    <input type="text" 
+                           name="username" 
+                           id="username" 
+                           required
+                           class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-3 rounded-lg text-gray-100 outline-none">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-400 mb-1">
+                        Senha
+                    </label>
+                    <input type="password" 
+                           name="password" 
+                           id="password" 
+                           required
+                           class="w-full bg-dark-300 border-2 border-dark-400 focus:border-accent-purple p-3 rounded-lg text-gray-100 outline-none">
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-accent-purple to-accent-blue hover:opacity-90 text-white font-medium py-3 px-4 rounded-lg transition-opacity">
+                    Entrar
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">
+                    Não tem uma conta? 
+                    <a href="{{ url_for('register') }}" 
+                       class="text-accent-purple hover:text-accent-blue transition-colors">
+                        Registre-se
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

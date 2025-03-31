@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil do Usuário - Gerenciador de Tarefas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dark: {
+                100: "#1a1a1a",
+                200: "#222222",
+                300: "#2d2d2d",
+                400: "#353535",
+                500: "#3a3a3a",
+              },
+              accent: {
+                purple: "#8b5cf6",
+                blue: "#3b82f6",
+                green: "#10b981",
+                red: "#ef4444",
+                yellow: "#f59e0b",
+                pink: "#ec4899",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Base styles and resets */
+      :root {
+        --dark-100: #1a1a1a;
+        --dark-200: #222222;
+        --dark-300: #2d2d2d;
+        --dark-400: #353535;
+        --dark-500: #3a3a3a;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #2d2d2d;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 4px;
+      }
+
+      /* Profile picture styles */
+      .profile-pic-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+      }
+
+      .profile-pic {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--dark-400);
+        transition: all 0.3s ease;
+      }
+
+      .profile-pic-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        cursor: pointer;
+      }
+
+      .profile-pic-container:hover .profile-pic-overlay {
+        opacity: 1;
+      }
+
+      .profile-pic-overlay-text {
+        color: white;
+        font-size: 0.8rem;
+        text-align: center;
+        padding: 0 10px;
+      }
+
+      /* Form styles */
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #d1d5db;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background-color: var(--dark-300);
+        border: 2px solid var(--dark-400);
+        border-radius: 0.5rem;
+        color: #e5e7eb;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+      }
+
+      .form-input.error {
+        border-color: #ef4444;
+      }
+
+      .form-error {
+        color: #ef4444;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+      }
+
+      .form-hint {
+        color: #9ca3af;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+      }
+
+      /* Button styles */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: linear-gradient(to right, #8b5cf6, #3b82f6);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(to right, #7c3aed, #2563eb);
+      }
+
+      .btn-danger {
+        background-color: #ef4444;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background-color: #dc2626;
+      }
+
+      .btn-secondary {
+        background-color: var(--dark-400);
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background-color: var(--dark-500);
+      }
+
+      /* Card styles */
+      .card {
+        background-color: var(--dark-300);
+        border-radius: 1rem;
+        border: 1px solid var(--dark-400);
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        padding: 1.25rem 1.5rem;
+        background-color: var(--dark-400);
+        border-bottom: 1px solid var(--dark-500);
+      }
+
+      .card-body {
+        padding: 1.5rem;
+      }
+
+      /* Tabs */
+      .tabs {
+        display: flex;
+        border-bottom: 2px solid var(--dark-400);
+        margin-bottom: 1.5rem;
+      }
+
+      .tab {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        color: #9ca3af;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+      }
+
+      .tab.active {
+        color: #8b5cf6;
+        border-bottom-color: #8b5cf6;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      /* Password strength meter */
+      .password-strength-meter {
+        height: 5px;
+        background-color: var(--dark-400);
+        border-radius: 2.5px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+      }
+
+      .password-strength-fill {
+        height: 100%;
+        width: 0;
+        transition: width 0.3s ease, background-color 0.3s ease;
+      }
+
+      .password-strength-text {
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 640px) {
+        .profile-pic-container {
+          width: 120px;
+          height: 120px;
+        }
+
+        .btn {
+          padding: 0.6rem 1.2rem;
+          font-size: 0.9rem;
+        }
+
+        .card-header,
+        .card-body {
+          padding: 1rem;
+        }
+
+        .tab {
+          padding: 0.6rem 1rem;
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-dark-100 text-gray-200 min-h-screen p-3 md:p-6">
+    <div
+      class="max-w-3xl mx-auto bg-dark-200 p-4 sm:p-6 rounded-xl shadow-lg border border-dark-400"
+    >
+      <!-- Header com navegação -->
+      <div class="flex items-center justify-between mb-6">
+        <a
+          href="{{ url_for('index') }}"
+          class="flex items-center text-gray-400 hover:text-white transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 mr-2"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Voltar para Tarefas
+        </a>
+
+        <h2
+          class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-accent-purple to-accent-blue bg-clip-text text-transparent"
+        >
+          Seu Perfil
+        </h2>
+      </div>
+
+      <!-- Mensagens flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-900/30 text-red-200 border border-red-800{% else %}bg-green-900/30 text-green-200 border border-green-800{% endif %}"
+      >
+        <div class="flex items-center">
+          {% if category == 'error' %}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 mr-2 text-red-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          {% else %}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 mr-2 text-green-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          {% endif %} {{ message }}
+        </div>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <!-- Tabs de navegação -->
+      <div class="tabs">
+        <div
+          class="tab active"
+          onclick="switchTab('profile-info')"
+          id="profile-info-tab"
+        >
+          Informações Pessoais
+        </div>
+        <div
+          class="tab"
+          onclick="switchTab('security')"
+          id="security-tab"
+        >
+          Segurança
+        </div>
+        <div
+          class="tab"
+          onclick="switchTab('preferences')"
+          id="preferences-tab"
+        >
+          Preferências
+        </div>
+      </div>
+
+      <!-- Conteúdo das tabs -->
+      <div class="tab-content active" id="profile-info-content">
+        <form
+          action="{{ url_for('profile') }}"
+          method="POST"
+          enctype="multipart/form-data"
+          class="space-y-6"
+        >
+          <!-- Foto de perfil -->
+          <div class="text-center mb-8">
+            <div class="profile-pic-container">
+              {% if user.profile_pic %}
+              <img
+                src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}"
+                alt="Foto de perfil"
+                class="profile-pic"
+                id="profile-preview"
+              />
+              {% else %}
+              <div
+                class="profile-pic flex items-center justify-center bg-gradient-to-br from-accent-purple to-accent-blue text-white text-4xl font-bold"
+                id="profile-preview-placeholder"
+              >
+                {{ user.name[0].upper() if user.name else user.username[0].upper() }}
+              </div>
+              {% endif %}
+              <label for="profile_pic" class="profile-pic-overlay">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-8 w-8 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <span class="profile-pic-overlay-text">Alterar foto</span>
+              </label>
+              <input
+                type="file"
+                id="profile_pic"
+                name="profile_pic"
+                accept="image/*"
+                class="hidden"
+                onchange="previewImage(this)"
+              />
+            </div>
+            <div class="mt-3 flex justify-center">
+              <button
+                type="button"
+                onclick="removeProfilePic()"
+                class="text-red-400 hover:text-red-300 text-sm flex items-center"
+                {% if not user.profile_pic %}disabled{% endif %}
+                id="remove-pic-btn"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 mr-1"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                Remover foto
+              </button>
+              <input
+                type="hidden"
+                name="remove_profile_pic"
+                id="remove_profile_pic"
+                value="0"
+              />
+            </div>
+          </div>
+
+          <!-- Informações pessoais -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="username" class="form-label">Nome de usuário</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                class="form-input"
+                value="{{ user.username }}"
+                readonly
+              />
+              <p class="form-hint">O nome de usuário não pode ser alterado</p>
+            </div>
+
+            <div class="form-group">
+              <label for="name" class="form-label">Nome completo</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                class="form-input"
+                value="{{ user.name }}"
+                placeholder="Seu nome completo"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="email" class="form-label">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-input"
+                value="{{ user.email }}"
+                placeholder="seu.email@exemplo.com"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="phone" class="form-label">Telefone</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                class="form-input"
+                value="{{ user.phone }}"
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <a
+              href="{{ url_for('index') }}"
+              class="btn btn-secondary"
+            >
+              Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-content" id="security-content">
+        <form
+          action="{{ url_for('profile') }}"
+          method="POST"
+          class="space-y-6"
+          id="password-form"
+        >
+          <div class="card mb-6">
+            <div class="card-header">
+              <h3 class="text-lg font-semibold text-white">Alterar Senha</h3>
+              <p class="text-sm text-gray-400 mt-1">
+                Sua senha deve ter pelo menos 8 caracteres e incluir letras e
+                números
+              </p>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="current_password" class="form-label"
+                  >Senha atual</label
+                >
+                <input
+                  type="password"
+                  id="current_password"
+                  name="current_password"
+                  class="form-input"
+                  placeholder="Digite sua senha atual"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="new_password" class="form-label">Nova senha</label>
+                <input
+                  type="password"
+                  id="new_password"
+                  name="new_password"
+                  class="form-input"
+                  placeholder="Digite sua nova senha"
+                  oninput="checkPasswordStrength(this.value)"
+                  required
+                />
+                <div class="password-strength-meter">
+                  <div
+                    class="password-strength-fill"
+                    id="password-strength-meter"
+                  ></div>
+                </div>
+                <p
+                  class="password-strength-text text-gray-400"
+                  id="password-strength-text"
+                >
+                  Força da senha: Não definida
+                </p>
+              </div>
+
+              <div class="form-group">
+                <label for="confirm_password" class="form-label"
+                  >Confirmar nova senha</label
+                >
+                <input
+                  type="password"
+                  id="confirm_password"
+                  name="confirm_password"
+                  class="form-input"
+                  placeholder="Confirme sua nova senha"
+                  oninput="checkPasswordMatch()"
+                  required
+                />
+                <p
+                  class="form-error hidden"
+                  id="password-match-error"
+                >
+                  As senhas não coincidem
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              onclick="resetPasswordForm()"
+              class="btn btn-secondary"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="change-password-btn"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Alterar Senha
+            </button>
+          </div>
+        </form>
+
+        <div class="mt-8 border-t border-dark-400 pt-6">
+          <h3 class="text-lg font-semibold text-white mb-4">
+            Sessões e Segurança
+          </h3>
+          <div class="bg-dark-400 p-4 rounded-lg">
+            <div class="flex items-start">
+              <div
+                class="w-10 h-10 rounded-full bg-accent-blue/20 flex items-center justify-center flex-shrink-0 mr-4"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-accent-blue"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-white font-medium">Último login</h4>
+                <p class="text-gray-400 text-sm">
+                  {% if user.last_login %}
+                  {{ user.last_login.strftime('%d/%m/%Y às %H:%M') }}
+                  {% else %}
+                  Não disponível
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="preferences-content">
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3 class="text-lg font-semibold text-white">
+              Preferências de Tema
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="flex items-center justify-between mb-4">
+              <span>Tema escuro</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked class="sr-only peer" />
+                <div
+                  class="w-11 h-6 bg-dark-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-purple"
+                ></div>
+              </label>
+            </div>
+            <p class="text-sm text-gray-400">
+              O tema escuro está ativado por padrão para reduzir o cansaço
+              visual.
+            </p>
+          </div>
+        </div>
+
+        <div class="card mb-6">
+          <div class="card-header">
+            <h3 class="text-lg font-semibold text-white">
+              Preferências de Notificação
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <span>Notificações por email</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" class="sr-only peer" />
+                  <div
+                    class="w-11 h-6 bg-dark-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-purple"
+                  ></div>
+                </label>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>Lembretes de tarefas</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked class="sr-only peer" />
+                  <div
+                    class="w-11 h-6 bg-dark-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-purple"
+                  ></div>
+                </label>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>Resumo semanal</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked class="sr-only peer" />
+                  <div
+                    class="w-11 h-6 bg-dark-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-purple"
+                  ></div>
+                </label>
+              </div>
+            </div>
+            <p class="text-sm text-gray-400 mt-4">
+              Estas preferências serão implementadas em breve.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+          <button type="button" class="btn btn-primary">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Salvar Preferências
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Funções para manipulação de abas
+      function switchTab(tabId) {
+        // Esconder todos os conteúdos
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        
+        // Desativar todas as abas
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        
+        // Ativar a aba selecionada
+        document.getElementById(tabId + '-tab').classList.add('active');
+        document.getElementById(tabId + '-content').classList.add('active');
+      }
+      
+      // Funções para manipulação de imagem de perfil
+      function previewImage(input) {
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            const previewElement = document.getElementById('profile-preview');
+            const placeholderElement = document.getElementById('profile-preview-placeholder');
+            
+            if (previewElement) {
+              previewElement.src = e.target.result;
+            } else if (placeholderElement) {
+              // Criar elemento de imagem se não existir
+              const img = document.createElement('img');
+              img.src = e.target.result;
+              img.id = 'profile-preview';
+              img.className = 'profile-pic';
+              img.alt = 'Foto de perfil';
+              
+              placeholderElement.parentNode.replaceChild(img, placeholderElement);
+            }
+            
+            // Habilitar botão de remover
+            document.getElementById('remove-pic-btn').removeAttribute('disabled');
+            // Resetar flag de remoção
+            document.getElementById('remove_profile_pic').value = '0';
+          }
+          
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+      
+      function removeProfilePic() {
+        const previewElement = document.getElementById('profile-preview');
+        if (previewElement) {
+          // Criar placeholder
+          const placeholder = document.createElement('div');
+          placeholder.id = 'profile-preview-placeholder';
+          placeholder.className = 'profile-pic flex items-center justify-center bg-gradient-to-br from-accent-purple to-accent-blue text-white text-4xl font-bold';
+          
+          // Obter a primeira letra do nome ou username
+          const username = '{{ user.name if user.name else user.username }}';
+          placeholder.textContent = username.charAt(0).toUpperCase();
+          
+          // Substituir imagem pelo placeholder
+          previewElement.parentNode.replaceChild(placeholder, previewElement);
+          
+          // Desabilitar botão de remover
+          document.getElementById('remove-pic-btn').setAttribute('disabled', 'disabled');
+          
+          // Definir flag para remover a imagem no backend
+          document.getElementById('remove_profile_pic').value = '1';
+          
+          // Limpar input de arquivo
+          document.getElementById('profile_pic').value = '';
+        }
+      }
+      
+      // Funções para validação de senha
+      function checkPasswordStrength(password) {
+        const meter = document.getElementById('password-strength-meter');
+        const text = document.getElementById('password-strength-text');
+        
+        // Critérios de força
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+        const isLongEnough = password.length >= 8;
+        
+        // Calcular pontuação (0-4)
+        let score = 0;
+        if (hasLowerCase) score++;
+        if (hasUpperCase) score++;
+        if (hasNumber) score++;
+        if (hasSpecialChar) score++;
+        if (isLongEnough) score++;
+        
+        // Normalizar para porcentagem
+        const percentage = (score / 5) * 100;
+        
+        // Atualizar medidor
+        meter.style.width = `${percentage}%`;
+        
+        // Definir cor baseada na pontuação
+        if (percentage <= 20) {
+          meter.style.backgroundColor = '#ef4444'; // Vermelho
+          text.textContent = 'Força da senha: Muito fraca';
+          text.className = 'password-strength-text text-red-400';
+        } else if (percentage <= 40) {
+          meter.style.backgroundColor = '#f59e0b'; // Laranja
+          text.textContent = 'Força da senha: Fraca';
+          text.className = 'password-strength-text text-yellow-500';
+        } else if (percentage <= 60) {
+          meter.style.backgroundColor = '#f59e0b'; // Amarelo
+          text.textContent = 'Força da senha: Média';
+          text.className = 'password-strength-text text-yellow-400';
+        } else if (percentage <= 80) {
+          meter.style.backgroundColor = '#10b981'; // Verde claro
+          text.textContent = 'Força da senha: Boa';
+          text.className = 'password-strength-text text-green-400';
+        } else {
+          meter.style.backgroundColor = '#10b981'; // Verde
+          text.textContent = 'Força da senha: Excelente';
+          text.className = 'password-strength-text text-green-400';
+        }
+      }
+      
+      function checkPasswordMatch() {
+        const password = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const errorElement = document.getElementById('password-match-error');
+        const confirmInput = document.getElementById('confirm_password');
+        
+        if (password && confirmPassword) {
+          if (password !== confirmPassword) {
+            errorElement.classList.remove('hidden');
+            confirmInput.classList.add('error');
+            document.getElementById('change-password-btn').disabled = true;
+          } else {
+            errorElement.classList.add('hidden');
+            confirmInput.classList.remove('error');
+            document.getElementById('change-password-btn').disabled = false;
+          }
+        }
+      }
+      
+      function resetPasswordForm() {
+        document.getElementById('password-form').reset();
+        document.getElementById('password-strength-meter').style.width = '0';
+        document.getElementById('password-strength-text').textContent = 'Força da senha: Não definida';
+        document.getElementById('password-strength-text').className = 'password-strength-text text-gray-400';
+        document.getElementById('password-match-error').classList.add('hidden');
+        document.getElementById('confirm_password').classList.remove('error');
+        document.getElementById('change-password-btn').disabled = false;
+      }
+      
+      // Inicialização
+      document.addEventListener('DOMContentLoaded', function() {
+        // Verificar se há hash na URL para abrir aba específica
+        const hash = window.location.hash.substring(1);
+        if (hash && ['profile-info', 'security', 'preferences'].includes(hash)) {
+          switchTab(hash);
+        }
+      });
+    </script>
+  </body>
+</html>
